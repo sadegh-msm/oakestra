@@ -69,8 +69,8 @@ func (r *ContainerRuntime) StopContainerdClient() {
 }
 
 func (r *ContainerRuntime) Deploy(service model.Service, statusChangeNotificationHandler func(service model.Service)) error {
-
 	var image containerd.Image
+	logger.CsvLog(logger.DEPLOYREQUEST, genTaskID(service.Sname, service.Instance), "")
 	// pull the given image
 	sysimg, err := r.contaierClient.ImageService().Get(r.ctx, service.Image)
 	if err == nil {
@@ -119,6 +119,7 @@ func (r *ContainerRuntime) Deploy(service model.Service, statusChangeNotificatio
 }
 
 func (r *ContainerRuntime) Undeploy(service string, instance int) error {
+	logger.CsvLog(logger.UNDEPLOYREQUEST, genTaskID(service, instance), "")
 	r.channelLock.Lock()
 	defer r.channelLock.Unlock()
 	taskid := genTaskID(service, instance)
@@ -203,7 +204,8 @@ func (r *ContainerRuntime) containerCreationRoutine(
 	}
 
 	//	start task
-	task, err := container.NewTask(ctx, cio.NewCreator(cio.WithStdio))
+	logfile := logger.GetServiceLogfile(hostname)
+	task, err := container.NewTask(ctx, cio.NewCreator(cio.WithStreams(nil, logfile, logfile)))
 	if err != nil {
 		logger.ErrorLogger().Printf("ERROR: containerd task creation failure: %v", err)
 		_ = container.Delete(ctx)
@@ -211,6 +213,7 @@ func (r *ContainerRuntime) containerCreationRoutine(
 		return
 	}
 	defer func(ctx context.Context, task containerd.Task) {
+		logger.CsvLog(logger.DEAD, hostname, "")
 		err := killTask(ctx, task, container)
 		//removing from killqueue
 		r.channelLock.Lock()
@@ -251,6 +254,7 @@ func (r *ContainerRuntime) containerCreationRoutine(
 
 	// adv startup finished
 	startup <- true
+	logger.CsvLog(logger.DEPLOYED, hostname, "")
 
 	// wait for manual task kill or task finish
 	select {
