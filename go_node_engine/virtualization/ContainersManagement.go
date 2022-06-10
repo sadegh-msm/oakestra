@@ -2,6 +2,7 @@ package virtualization
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/containerd/containerd"
@@ -303,14 +304,17 @@ func (r *ContainerRuntime) ResourceMonitoring(every time.Duration, notifyHandler
 						logger.ErrorLogger().Printf("Unable to fetch task disk usage: %v", err)
 						continue
 					}
-					resourceList = append(resourceList, model.Resources{
+					service_resources := model.Resources{
 						Cpu:      fmt.Sprintf("%f", sysInfo.CPU),
 						Memory:   fmt.Sprintf("%f", sysInfo.Memory),
 						Disk:     fmt.Sprintf("%d", usage.Size),
 						Sname:    extractSnameFromTaskID(task.ID()),
 						Runtime:  model.CONTAINER_RUNTIME,
 						Instance: extractInstanceNumberFromTaskID(task.ID()),
-					})
+					}
+					resourceList = append(resourceList, service_resources)
+					resourcesJson, _ := json.Marshal(service_resources)
+					logger.CsvLog(logger.SERVICE_RESOURCES, task.ID(), string(resourcesJson))
 				}
 				//NOTIFY WITH THE CURRENT CONTAINERS STATUS
 				notifyHandler(resourceList)

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/jaypipes/ghw"
 	"github.com/shirou/gopsutil/cpu"
@@ -59,12 +60,15 @@ func GetNodeInfo() Node {
 
 func GetDynamicInfo() Node {
 	node.updateDynamicInfo()
-	return Node{
+	node := Node{
 		CpuUsage:   node.CpuUsage,
 		CpuCores:   node.CpuCores,
 		MemoryUsed: node.MemoryUsed,
 		MemoryMB:   node.MemoryMB,
 	}
+	nodeJson, _ := json.Marshal(node)
+	logger.CsvLog(logger.NODE_RESOURCES, "NODE_ENGINE", string(nodeJson))
+	return node
 }
 
 func EnableOverlay(port int) {

@@ -2,6 +2,32 @@ import os
 import sys
 import logging
 from logging.handlers import RotatingFileHandler
+from csv_logger import CsvLogger
+import logging
+from time import sleep
+
+filename = 'logs/log.csv'
+delimiter = ';'
+level = logging.INFO
+custom_additional_levels = ['SCHEDULE_REQUEST', 'SCHEDULED']
+fmt = f'%(asctime)s{delimiter}ROOT_ORCH{delimiter}%(levelname)s{delimiter}%(message)s'
+datefmt = '%s'
+max_size = 1024  # 1 kilobyte
+max_files = 4  # 4 rotating files
+header = ['timestamp', 'service', 'event', 'value']
+csvlogger=CsvLogger(filename=filename,
+                     delimiter=delimiter,
+                     level=level,
+                     add_level_names=custom_additional_levels,
+                     add_level_nums=None,
+                     fmt=fmt,
+                     datefmt=datefmt,
+                     max_size=max_size,
+                     max_files=max_files,
+                     header=header)
+
+def get_csv_logger():
+    return csvlogger
 
 
 def configure_logging():

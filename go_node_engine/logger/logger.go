@@ -18,10 +18,12 @@ var fileonce sync.Once
 type EventType string
 
 const (
-	DEPLOYREQUEST   EventType = "DEPLOY_REQUEST"
-	UNDEPLOYREQUEST EventType = "UNDEPLOY_REQUEST"
-	DEPLOYED        EventType = "DEPLOYED"
-	DEAD            EventType = "DEAD"
+	DEPLOYREQUEST     EventType = "DEPLOY_REQUEST"
+	UNDEPLOYREQUEST   EventType = "UNDEPLOY_REQUEST"
+	DEPLOYED          EventType = "DEPLOYED"
+	SERVICE_RESOURCES EventType = "RESOURCES"
+	NODE_RESOURCES    EventType = "RESOURCES"
+	DEAD              EventType = "DEAD"
 )
 
 func InfoLogger() *log.Logger {
