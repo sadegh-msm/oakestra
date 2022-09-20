@@ -9,7 +9,7 @@ from time import sleep
 filename = 'logs/log.csv'
 delimiter = ';'
 level = logging.INFO
-custom_additional_levels = ['SCHEDULE_REQUEST', 'SCHEDULED']
+custom_additional_levels = ['SCHEDULE_REQUEST','DELETE_REQUEST', 'SCHEDULED']
 fmt = f'%(asctime)s{delimiter}ROOT_ORCH{delimiter}%(levelname)s{delimiter}%(message)s'
 datefmt = '%s'
 max_size = 1024  # 1 kilobyte
