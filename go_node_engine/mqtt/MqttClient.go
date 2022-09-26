@@ -123,10 +123,12 @@ func deleteHandler(client mqtt.Client, msg mqtt.Message) {
 		return
 	}
 	runtime := virtualization.GetRuntime(service.Runtime)
-	err = runtime.Undeploy(service.Sname, service.Instance)
-	if err != nil {
-		logger.ErrorLogger().Printf("Unable to undeploy application: %s", err.Error())
-	}
+	go func() {
+		err := runtime.Undeploy(service.Sname, service.Instance)
+		if err != nil {
+			logger.ErrorLogger().Printf("Unable to undeploy application: %s", err.Error())
+		}
+	}()
 	service.Status = model.SERVICE_UNDEPLOYED
 	ReportServiceStatus(service)
 }
