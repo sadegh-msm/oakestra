@@ -4,16 +4,16 @@
   "applications" : [
     {
       "applicationID" : "",
-      "application_name" : "clientsrvr",
+      "application_name" : "iperf",
       "application_namespace" : "test",
-      "application_desc" : "Simple demo with curl client and Nginx server",
+      "application_desc" : "Simple demo with iperf client and server",
       "microservices" : [
         {
           "microserviceID": "",
-          "microservice_name": "curl",
+          "microservice_name": "client",
           "microservice_namespace": "test",
           "virtualization": "container",
-          "cmd": ["sh", "-c", "tail -f /dev/null"],
+          "cmd": ["iperf3","-c","10.30.31.31"],
           "memory": 100,
           "vcpus": 1,
           "vgpus": 0,
@@ -21,17 +21,16 @@
           "bandwidth_in": 0,
           "bandwidth_out": 0,
           "storage": 0,
-          "code": "docker.io/curlimages/curl:7.82.0",
+          "code": "docker.io/networkstatic/iperf3:latest",
           "state": "",
-          "port": "9080",
           "added_files": []
         },
         {
           "microserviceID": "",
-          "microservice_name": "nginx",
+          "microservice_name": "server",
           "microservice_namespace": "test",
           "virtualization": "container",
-          "cmd": [],
+          "cmd": ["iperf3","-s"],
           "memory": 100,
           "vcpus": 1,
           "vgpus": 0,
@@ -39,11 +38,11 @@
           "bandwidth_in": 0,
           "bandwidth_out": 0,
           "storage": 0,
-          "code": "docker.io/library/nginx:latest",
+          "code": "docker.io/networkstatic/iperf3:latest",
           "state": "",
-          "port": "6080:60/tcp",
+          "port": "5201",
           "addresses": {
-            "rr_ip": "10.30.30.30"
+            "rr_ip": "10.30.31.31"
           },
           "added_files": []
         }
