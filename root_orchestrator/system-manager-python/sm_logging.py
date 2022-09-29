@@ -22,8 +22,6 @@ csvlogger=CsvLogger(filename=filename,
                      add_level_nums=None,
                      fmt=fmt,
                      datefmt=datefmt,
-                     max_size=max_size,
-                     max_files=max_files,
                      header=header)
 
 def get_csv_logger():
