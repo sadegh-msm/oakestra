@@ -16,7 +16,6 @@ import (
 	"go_node_engine/logger"
 	"go_node_engine/model"
 	"go_node_engine/requests"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"strconv"
@@ -258,10 +257,8 @@ func (r *ContainerRuntime) containerCreationRoutine(
 	select {
 	case exitStatus := <-exitStatusC:
 		//TODO: container exited, do something, notify to cluster manager
-		if err != nil {
-			return
-		}
 		logger.InfoLogger().Printf("WARNING: Container exited with status %d", exitStatus.ExitCode())
+		logger.CsvLog(logger.DEAD, service.Sname, fmt.Sprintf("{'status': %d}", exitStatus.ExitCode()))
 		service.StatusDetail = fmt.Sprintf("Container exited with status: %d", exitStatus.ExitCode())
 	case <-*killChannel:
 		logger.InfoLogger().Printf("Kill channel message received for task %s", task.ID())
@@ -368,7 +365,7 @@ func withCustomResolvConf(src string) func(context.Context, oci.Client, *contain
 }
 
 func getGoogleDNSResolveConf() (*os.File, error) {
-	file, err := ioutil.TempFile("/tmp", "edgeio-resolv-conf")
+	file, err := os.CreateTemp("/tmp", "edgeio-resolv-conf")
 	if err != nil {
 		logger.ErrorLogger().Printf("Unable to create temp resolv file: %v", err)
 		return nil, err
