@@ -25,6 +25,7 @@ type Resources struct {
 	Sname    string `json:"job_name"`
 	Runtime  string `json:"virtualization"`
 	Instance int    `json:"instance"`
+	Pid      uint32
 }
 
 const (

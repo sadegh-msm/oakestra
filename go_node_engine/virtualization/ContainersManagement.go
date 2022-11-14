@@ -310,6 +310,7 @@ func (r *ContainerRuntime) ResourceMonitoring(every time.Duration, notifyHandler
 						Memory:   fmt.Sprintf("%f", sysInfo.Memory),
 						Disk:     fmt.Sprintf("%d", usage.Size),
 						Sname:    extractSnameFromTaskID(task.ID()),
+						Pid:      task.Pid(),
 						Runtime:  model.CONTAINER_RUNTIME,
 						Instance: extractInstanceNumberFromTaskID(task.ID()),
 					}

@@ -31,7 +31,7 @@ from flask import Flask
 from secrets import token_hex
 from datetime import timedelta
 from flask_smorest import Blueprint, Api, abort
-from flask_swagger_ui import get_swaggerui_blueprint
+from flask_smorest import Blueprint, Api, abort
 
 # from blueprints.users_blueprints import *
 
