@@ -6,6 +6,7 @@ type Service struct {
 	Instance     int      `json:"instance_number"`
 	Image        string   `json:"image"`
 	Commands     []string `json:"cmd"`
+	HealthCheck  []string `json:"health-check"`
 	Env          []string `json:"environment"`
 	Ports        string   `json:"port"`
 	Status       string   `json:"status"`
@@ -16,6 +17,7 @@ type Service struct {
 	Vcpus        int      `json:"vcpus"`
 	Memory       int      `json:"memory"`
 	Pid          int
+	KillChan     *chan bool
 }
 
 type Resources struct {
@@ -28,8 +30,8 @@ type Resources struct {
 }
 
 const (
-	SERVICE_ACTIVE     = "ACTIVE"
-	SERVICE_CREATING   = "CREATING"
+	SERVICE_ACTIVE     = "RUNNING"
+	SERVICE_CREATING   = "NODE_SCHEDULED"
 	SERVICE_DEAD       = "DEAD"
 	SERVICE_FAILED     = "FAILED"
 	SERVICE_UNDEPLOYED = "UNDEPLOYED"

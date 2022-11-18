@@ -37,6 +37,12 @@ sla_schema = {
                                         "type": "string",
                                     }
                                 },
+                                "health-check": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string",
+                                    }
+                                },
                                 "environment": {
                                     "type": "array",
                                     "items": {
