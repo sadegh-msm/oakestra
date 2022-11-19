@@ -493,7 +493,7 @@ func (r *ContainerRuntime) executeHealthCheck(ctx context.Context, container con
 
 	//if no health check defined then skip
 	if service.HealthCheck == nil || len(service.HealthCheck) == 0 {
-		return ERROR, nil
+		return HEALTHY, nil
 	}
 
 	//create healthcheck task process specs
