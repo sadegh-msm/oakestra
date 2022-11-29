@@ -189,7 +189,7 @@ func (r *ContainerRuntime) containerCreationRoutine(
 
 	//add GPU if needed
 	if service.Vgpus > 0 {
-		specOpts = append(specOpts, nvidia.WithGPUs(nvidia.WithDevices(0), nvidia.WithAllCapabilities))
+		specOpts = append(specOpts, nvidia.WithGPUs(nvidia.WithAllDevices, nvidia.WithAllCapabilities))
 		logger.InfoLogger().Printf("NVIDIA - Adding GPU driver")
 	}
 	//add resolve file with default google dns
@@ -334,7 +334,7 @@ func (r *ContainerRuntime) ResourceMonitoring(every time.Duration, notifyHandler
 						continue
 					}
 					el, found := r.serviceList[task.ID()]
-					if found {
+					if found && el != nil {
 						if el.Status != model.SERVICE_ACTIVE {
 							logger.InfoLogger().Printf("Service %s not ACTIVE, service info skipped", task.ID())
 							continue
