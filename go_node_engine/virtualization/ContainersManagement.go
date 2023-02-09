@@ -209,7 +209,7 @@ func (r *ContainerRuntime) containerCreationRoutine(
 		ctx,
 		hostname,
 		containerd.WithImage(image),
-		containerd.WithNewSnapshot(fmt.Sprintf("%s-snapshotter", hostname), image),
+		containerd.WithNewSnapshot(fmt.Sprintf("%s", hostname), image),
 		containerd.WithNewSpec(specOpts...),
 	)
 	if err != nil {

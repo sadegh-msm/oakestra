@@ -5,7 +5,7 @@ from mongodb_client import mongo_find_one_node, mongo_find_all_active_nodes, mon
     mongo_find_node_by_id
 
 
-def calculate(app, job):
+def calculate(app, job, instance_num):
     print('calculating...')
     app.logger.info('calculating')
 
@@ -13,17 +13,17 @@ def calculate(app, job):
     constraints = job.get('constraints')
     if constraints is not None:
         return constraint_based_scheduling(job,
-                                           constraints)
+                                           constraints, instance_num)
     else:
         return greedy_load_balanced_algorithm(job=job)
 
 
-def constraint_based_scheduling(job, constraints):
+def constraint_based_scheduling(job, constraints, instance_num):
     nodes = mongo_find_all_active_nodes()
     for constraint in constraints:
         type = constraint.get('type')
         if type == 'direct':
-            return deploy_on_best_among_desired_nodes(job, constraint.get('node'))
+            return deploy_on_best_among_desired_nodes(job, constraint.get('node'), instance_num)
     return greedy_load_balanced_algorithm(job=job)
 
 
@@ -51,14 +51,14 @@ def first_fit_algorithm(job):
     return 'negative', None
 
 
-def deploy_on_best_among_desired_nodes(job, nodes):
+def deploy_on_best_among_desired_nodes(job, nodes, instance_num):
     desired_nodes_list = nodes.split(';')
     active_nodes = mongo_find_all_active_nodes()
     selected_nodes = []
     for node in active_nodes:
         if node['node_info']['host'] in desired_nodes_list:
             selected_nodes.append(node)
-    return greedy_load_balanced_algorithm(job, active_nodes=selected_nodes)
+    return greedy_load_balanced_algorithm(job, active_nodes=selected_nodes[int(instance_num) % len(selected_nodes)])
 
 
 def greedy_load_balanced_algorithm(job, active_nodes=None):

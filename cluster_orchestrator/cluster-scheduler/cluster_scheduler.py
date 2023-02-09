@@ -68,7 +68,7 @@ def start_calc_deploy(job,job_id,instance_num):
     app.logger.info("App.logger.info Received Task")
     print("print Received Task")
 
-    scheduling_status, scheduling_result = calculate(app, job)  # scheduling_result can be a node object
+    scheduling_status, scheduling_result = calculate(app, job,instance_num)  # scheduling_result can be a node object
 
     if scheduling_status == 'negative':
         app.logger.info('No active node found to schedule this job.')

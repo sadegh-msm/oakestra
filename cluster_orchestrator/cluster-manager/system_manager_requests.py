@@ -4,6 +4,7 @@ import os
 import service_operations
 import traceback
 
+from cluster_scheduler_requests import scheduler_request_deploy
 from mongodb_client import mongo_aggregate_node_information, mongo_get_services_with_failed_instanes
 from my_prometheus_client import prometheus_set_metrics
 
@@ -47,9 +48,10 @@ def send_aggregated_info(my_id, data):
 
 def trigger_undeploy_and_re_deploy(service, instance):
     try:
-        service_operations.delete_service(service.get('system_job_id'), instance.get('instance_number'))
-        service_operations.deploy_service(service, str(service.get('system_job_id')),
-                                          str(instance.get('instance_number')))
+        service_operations.delete_service(service.get('system_job_id'), instance.get('instance_number'), erase=False)
+        scheduler_request_deploy(service,str(service.get('system_job_id')), str(instance.get('instance_number')))
+        # service_operations.deploy_service(service, str(service.get('system_job_id')),
+        #                                 str(instance.get('instance_number')))
     except Exception as e:
         print(e)
 

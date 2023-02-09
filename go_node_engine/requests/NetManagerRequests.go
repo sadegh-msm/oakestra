@@ -29,7 +29,6 @@ var httpClient = &http.Client{
 }
 
 func AttachNetworkToTask(pid int, servicename string, instance int, portMappings string) error {
-
 	ongoingDeployment.Lock()
 	defer ongoingDeployment.Unlock()
 
