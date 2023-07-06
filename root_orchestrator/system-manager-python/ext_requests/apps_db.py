@@ -1,6 +1,7 @@
 from bson import ObjectId
 
 import ext_requests.mongodb_client as db
+from datetime import datetime
 
 
 # ....... Job operations .........
@@ -40,25 +41,41 @@ def mongo_update_job_status(job_id, status, status_detail, instances=None):
     job = db.mongo_services.find_one({'_id': ObjectId(job_id)})
     if job is None:
         return None
-    instance_list = job.get('instance_list')
+    mismatch = []
     if instances is not None:
         for instance in instances:
-            db.mongo_services.update_one(
+            current_time = datetime.now().isoformat()
+            cpu_update = {'value': instance.get('cpu'), 'timestamp': current_time}
+            memory_update = {'value': instance.get('memory'), 'timestamp': current_time}
+            updated = db.mongo_services.find_one_and_update(
                 {'_id': ObjectId(job_id),
                  "instance_list": {'$elemMatch': {'instance_number': instance['instance_number']}}},
-                {'$set': {"instance_list.$.cpu": instance.get('cpu'),
-                          "instance_list.$.publicip": instance.get('publicip'),
-                          "instance_list.$.memory": instance.get('memory'),
-                          "instance_list.$.disk": instance.get('disk'),
-                          "instance_list.$.status": instance.get('status'),
-                          "instance_list.$.status_detail": instance.get('status_detail', "No extra information")}
-                 }
+                {
+                    '$push': {
+                        "instance_list.$.cpu_history": {'$each': [cpu_update], '$slice': -100},
+                        "instance_list.$.memory_history": {'$each': [memory_update], '$slice': -100}
+                    },
+                    '$set': {
+                        "instance_list.$.cpu": instance.get('cpu'),
+                        "instance_list.$.memory": instance.get('memory'),
+                        "instance_list.$.publicip": instance.get('publicip'),
+                        "instance_list.$.disk": instance.get('disk'),
+                        "instance_list.$.status": instance.get('status'),
+                        "instance_list.$.status_detail": instance.get('status_detail', "No extra information"),
+                    }
+                },
+                return_document=True
             )
+            if updated is None:
+                mismatch.append(instance)
 
-    return db.mongo_services.find_one_and_update(
+    return_doc = db.mongo_services.find_one_and_update(
         {'_id': ObjectId(job_id)},
         {'$set': {'status': status, 'status_detail': status_detail}},
         return_document=True)
+    #if any misalignment detected, report back
+    return_doc['mismatch'] = mismatch
+    return return_doc
 
 
 def mongo_set_microservice_id(job_id):

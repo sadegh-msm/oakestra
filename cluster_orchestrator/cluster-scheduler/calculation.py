@@ -58,7 +58,7 @@ def deploy_on_best_among_desired_nodes(job, nodes, instance_num):
     for node in active_nodes:
         if node['node_info']['host'] in desired_nodes_list:
             selected_nodes.append(node)
-    return greedy_load_balanced_algorithm(job, active_nodes=selected_nodes[int(instance_num) % len(selected_nodes)])
+    return greedy_load_balanced_algorithm(job, active_nodes=[selected_nodes[int(instance_num) % len(selected_nodes)]])
 
 
 def greedy_load_balanced_algorithm(job, active_nodes=None):

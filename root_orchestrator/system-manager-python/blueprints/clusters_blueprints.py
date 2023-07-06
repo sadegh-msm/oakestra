@@ -91,5 +91,9 @@ class ClusterController(MethodView):
             if result is None:
                 # cluster has outdated jobs, ask to undeploy
                 cluster_request_to_delete_job_by_ip(j.get('system_job_id'), -1, request.remote_addr)
+            if len(result['mismatch']) > 0:
+                # misalligned cluster, undeploing mismatched instances
+                for i in result['mismatch']:
+                    cluster_request_to_delete_job_by_ip(j.get('system_job_id'), i.get('instance_number'), request.remote_addr)
 
         return 'ok'
