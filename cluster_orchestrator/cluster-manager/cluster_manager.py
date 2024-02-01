@@ -18,7 +18,7 @@ from mongodb_client import (
 )
 from mqtt_client import mqtt_init, mqtt_publish_edge_deploy
 from my_prometheus_client import prometheus_init_gauge_metrics
-from network_plugin_requests import network_notify_deployment
+from network_plugin_requests import network_notify_deployment, init_net_component
 from prometheus_client import start_http_server
 from system_manager_requests import re_deploy_dead_services_routine, send_aggregated_info_to_sm
 
@@ -30,7 +30,7 @@ NETWORK_COMPONENT_PORT = os.environ.get("CLUSTER_SERVICE_MANAGER_PORT")
 MY_ASSIGNED_CLUSTER_ID = None
 
 SYSTEM_MANAGER_ADDR = (
-    "http://" + os.environ.get("SYSTEM_MANAGER_URL") + ":" + os.environ.get("SYSTEM_MANAGER_PORT")
+        "http://" + os.environ.get("SYSTEM_MANAGER_URL") + ":" + os.environ.get("SYSTEM_MANAGER_PORT")
 )
 
 my_logger = configure_logging()
@@ -218,6 +218,8 @@ def handle_init_final(jsonarg):
         app.logger.info("Received ID. Go ahead with Background Jobs")
         prometheus_init_gauge_metrics(MY_ASSIGNED_CLUSTER_ID, app.logger)
         background_job_send_aggregated_information_to_sm()
+        ## register to net component (if there is one)
+        init_net_component(cluster_id=MY_ASSIGNED_CLUSTER_ID)
     else:
         app.logger.info("No ID received.")
 
