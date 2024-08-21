@@ -30,9 +30,9 @@ import (
 // ContainerRuntime is the struct that describes the container runtime
 type ContainerRuntime struct {
 	containerClient *containerd.Client
-	killQueue      map[string]*chan bool
-	channelLock    *sync.RWMutex
-	ctx            context.Context
+	killQueue       map[string]*chan bool
+	channelLock     *sync.RWMutex
+	ctx             context.Context
 }
 
 var runtime = ContainerRuntime{
@@ -105,7 +105,7 @@ func (r *ContainerRuntime) Deploy(service model.Service, statusChangeNotificatio
 					docker_remote.WithPlainHTTP(alwaysPlainHTTP),
 				}
 				resolver := docker_remote.NewResolver(docker_remote.ResolverOptions{
-					Hosts:   docker_remote.ConfigureDefaultRegistries(ropts...),
+					Hosts: docker_remote.ConfigureDefaultRegistries(ropts...),
 				})
 				image, err = r.containerClient.Pull(r.ctx, service.Image, containerd.WithPullUnpack, containerd.WithResolver(resolver))
 				if err != nil {
