@@ -33,7 +33,7 @@ var (
 	unikernelSupport bool
 	logDirectory     string
 	// Addons
-	imageBuilder bool
+	imageBuilder        bool
 	flopsLearnerSupport bool
 )
 
