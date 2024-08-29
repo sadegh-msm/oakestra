@@ -1,0 +1,8 @@
+## Mount the ~/oakestra/certs folder as a volume
+
+services:
+  mqtt:
+    volumes:
+      - ../certs:/certs
+    environment:
+      - MQTT_CERT=/certs
