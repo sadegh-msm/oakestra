@@ -42,15 +42,14 @@ class ServiceScaler:
         except Exception as e:
             print(f"Error monitoring service {service_id}: {e}")
 
-    def start_monitoring_services(self, services, check_interval):
-        for service in services:
-            service_id = service["id"]
-            scaling_config = service["scaling_config"]  # Get the scaling config for each service
-            monitor_thread = Thread(
-                target=self.monitor_single_service, args=(service_id, scaling_config)
-            )
-            monitor_thread.daemon = True
-            monitor_thread.start()
+    def start_monitoring_services(self, service_id, scaling_config, check_interval):
+        # This will run the monitoring in an infinite loop
+        def monitor_loop():
+            while True:
+                self.monitor_single_service(service_id, scaling_config)
+                time.sleep(check_interval)  # Wait for the specified check interval
 
-            # Sleep for the defined check interval
-            time.sleep(check_interval)
+        # Start the monitor loop in a background thread
+        monitor_thread = Thread(target=monitor_loop)
+        monitor_thread.daemon = True
+        monitor_thread.start()
