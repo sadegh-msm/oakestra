@@ -3,9 +3,6 @@ import json
 import requests
 from pymongo import MongoClient
 
-MONGO_CLUSTER_URI = os.environ.get("MONGO_CLUSTER_URI", "mongodb://46.249.99.42:10107/")
-DATABASE_CLUSTER_NAME = os.environ.get("DATABASE_CLUSTER_NAME", "jobs")
-COLLECTION_CLUSTER_NAME = os.environ.get("COLLECTION_CLUSTER_NAME", "jobs")
 
 MONGO_ROOT_URI = os.environ.get("MONGO_ROOT_URI", "mongodb://46.249.99.42:10007/")
 DATABASE_ROOT_NAME = os.environ.get("DATABASE_ROOT_NAME", "clusters")
@@ -25,14 +22,8 @@ CLUSTER_MANAGER_ADDR = (
     + str(os.environ.get("CLUSTER_MANAGER_PORT", "10105"))
 )
 
-ROOT_HCA_ADDR = (
-    "http://"
-    + os.environ.get("ROOT_HCA_URL", "46.249.99.42")
-    + ":"
-    + str(os.environ.get("ROOT_HCA_PORT", "10080"))
-)
-
 token = None
+
 
 def login_to_system_manager():
     request_address = SYSTEM_MANAGER_ADDR + "/api/auth/login"
@@ -47,7 +38,8 @@ def login_to_system_manager():
     except requests.exceptions.RequestException as e:
         print(f"Error logging in to System Manager: {e}")
 
-def manager_deploy_request(cluster_id, job_id):
+
+def deploy_request(cluster_id, job_id):
     request_address = SYSTEM_MANAGER_ADDR + "/api/result/deploy"
     print("calling: ", request_address)
     try:
@@ -59,176 +51,6 @@ def manager_deploy_request(cluster_id, job_id):
     except requests.exceptions.RequestException:
         print("Calling System Manager /api/result/deploy not successful.")
 
-# def cluster_deploy_request(job_id, instance_num):
-#     request_address = SYSTEM_MANAGER_ADDR + f"/api/calculate/deploy/{job_id}/{instance_num}"
-#     try:
-#         response = requests.post(request_address, headers={"Authorization": f"Bearer {token}"})
-#         if response.status_code == 200:
-#             print(f"Successfully sent deploy request for job {job_id}, instance {instance_num}")
-#         else:
-#             print(f"Failed to send deploy request. Status code: {response.status_code}")
-#     except requests.exceptions.RequestException as e:
-#         print(f"Error sending deploy request: {e}")
-
-# def cluster_deploy_request(job_id, instance_num, cluster_id):
-#     cluster_ip = get_cluster_ip_by_id(cluster_id)
-#     if cluster_ip is None:
-#         print(f"Failed to get cluster IP for cluster {cluster_id}")
-#         return
-
-#     # delete this later
-#     cluster_ip = "46.249.99.42"
-
-#     request_address = f"http://{cluster_ip}:10105/api/calculate/deploy/{job_id}/{instance_num}"
-#     try:
-#         response = requests.post(request_address, headers={"Authorization": f"Bearer {token}"})
-#         if response.status_code == 200:
-#             print(f"Successfully sent deploy request for job {job_id}, instance {instance_num}")
-#         else:
-#             print(f"Failed to send deploy request. Status code: {response.status_code}")
-#     except requests.exceptions.RequestException as e:
-#         print(f"Error sending deploy request: {e}")
-
-def delete_instance_from_service(service_id, instance_id):
-    request_address = SYSTEM_MANAGER_ADDR + f"/api/service/{service_id}/instance/{instance_id}"
-    try:
-        requests.delete(request_address, headers={"Authorization": f"Bearer {token}"})
-    except requests.exceptions.RequestException:
-        print("Calling System Manager /api/service/{service_id}/instance/{instance_id} not successful.")
-
-def create_instance_for_service(service_id):
-    print("Creating new instance for service...")
-    request_address = SYSTEM_MANAGER_ADDR + f"/api/service/{service_id}/instance"
-    try:
-        response = requests.post(request_address, headers={"Authorization": f"Bearer {token}"})
-        if response.status_code == 200:
-            print(f"Successfully created new instance for service {service_id}")
-        else:
-            print(f"Failed to create instance for service {service_id}. Status code: {response.status_code}")
-    except requests.exceptions.RequestException as e:
-        print(f"Error creating instance for service {service_id}: {e}")
-
-def get_service_data(service_id):
-    """Fetch service data from MongoDB and extract CPU and RAM usage for all instances."""
-    try:
-        client = MongoClient(MONGO_CLUSTER_URI)
-        db = client[DATABASE_CLUSTER_NAME]
-        collection = db[COLLECTION_CLUSTER_NAME]
-
-        service_data = collection.find_one({"system_job_id": service_id})
-
-        if not service_data:
-            print(f"No data found for service_id: {service_id}")
-
-        instance_list = service_data.get("instance_list", [])
-        cpu_usage = [float(instance.get("cpu", 0)) for instance in instance_list]
-        ram_usage = [float(instance.get("memory", 0)) for instance in instance_list]
-
-        return {
-            "cpu_per_container": cpu_usage,
-            "ram_per_container": ram_usage,
-            "replica_count": len(instance_list),
-        }
-
-    except Exception as e:
-        print(f"Error fetching service data: {e}")
-
-def get_instance_list(service_id):
-    """Get list of instances for a service from the System Manager API."""
-    request_address = SYSTEM_MANAGER_ADDR + f"/api/service/{service_id}"
-    try:
-        response = requests.get(request_address, headers={"Authorization": f"Bearer {token}"})
-        if response.status_code == 200:
-            service_data = response.json()
-            if isinstance(service_data, str):
-                service_data = json.loads(service_data)
-
-            instance_list = service_data.get("instance_list", [])
-
-            return [instance["instance_number"] for instance in instance_list]
-        else:
-            print(f"Failed to get instances for service {service_id}. Status code: {response.status_code}")
-    except requests.exceptions.RequestException as e:
-        print(f"Error getting instances for service {service_id}: {e}")
-
-# def get_all_clusters():
-#     """Get a mapping of cluster names to cluster IDs."""
-#     try:
-#         request_address = SYSTEM_MANAGER_ADDR + "/api/clusters"
-#         response = requests.get(request_address, headers={"Authorization": f"Bearer {token}"})
-        
-#         if response.status_code == 200:
-#             clusters = response.json()
-#             cluster_map = {cluster["cluster_name"]: str(cluster["_id"]) for cluster in clusters}
-#             return cluster_map
-#         else:
-#             print(f"Failed to get clusters. Status code: {response.status_code}")
-
-#     except requests.exceptions.RequestException as e:
-#         print(f"Error getting clusters: {e}")
-
-def get_all_jobs():
-    request_address = SYSTEM_MANAGER_ADDR + "/api/services"
-    print("calling", request_address)
-    try:
-        response = requests.get(request_address, headers={"Authorization": f"Bearer {token}"})
-        if response.status_code == 200:
-            services = response.json()
-            service_map = {str(service["_id"]): service["job_name"] for service in services}
-            return service_map
-        else:
-            print(f"Failed to get services. Status code: {response.status_code}")
-    except requests.exceptions.RequestException as e:
-        print(f"Error getting services: {e}")
-
-# def root_hca_scale_request(service_id):
-#     request_address = ROOT_HCA_ADDR + f"/api/hca/{service_id}"
-#     try:
-#         response = requests.post(request_address, headers={"Authorization": f"Bearer {token}"})
-#         if response.status_code == 200:
-#             print(f"Successfully sent deploy request for job {service_id}")
-#         else:
-#             print(f"Failed to send deploy request. Status code: {response.status_code}")
-#     except requests.exceptions.RequestException as e:
-#         print(f"Error sending deploy request: {e}")
-
-def get_next_instance_num(service_id):
-    request_address = SYSTEM_MANAGER_ADDR + f"/api/service/{service_id}"
-    print("calling", request_address)
-    try:
-        response = requests.get(request_address, headers={"Authorization": f"Bearer {token}"})
-        if response.status_code == 200:
-            service_data = response.json()
-            if isinstance(service_data, str):
-                service_data = json.loads(service_data)
-            return service_data.get("next_instance_progressive_number")
-        else:
-            print(f"Failed to get next instance number for service {service_id}. Status code: {response.status_code}")
-            return None
-    except requests.exceptions.RequestException as e:
-        print(f"Error getting next instance number for service {service_id}: {e}")
-        return None
-
-def is_cluster_full(cluster_id):
-    client = MongoClient(MONGO_ROOT_URI)
-    db = client[DATABASE_ROOT_NAME]
-    collection = db[COLLECTION_ROOT_NAME]
-
-    cluster_data = collection.find_one({"_id": cluster_id})
-    if not cluster_data:
-        return False
-
-    cpu_history = cluster_data.get("cpu_history", [])
-    memory_history = cluster_data.get("memory_history", [])
-    total_cpu_cores = cluster_data.get("total_cpu_cores", 0)
-
-    if not cpu_history or not memory_history:
-        return False
-
-    last_cpu = cpu_history[-1]["value"]
-    last_memory = memory_history[-1]["value"]
-
-    return last_cpu >= (total_cpu_cores - 0.5) or last_memory >= 90
 
 def get_service_cluster_id(service_id):
     request_address = SYSTEM_MANAGER_ADDR + f"/api/service/{service_id}"
@@ -261,6 +83,7 @@ def get_service_cluster_id(service_id):
         print(f"Error getting service data: {e}")
         return None
 
+
 def get_cluster_ip_by_id(cluster_id):
     request_address = SYSTEM_MANAGER_ADDR + f"/api/clusters"
     print("calling", request_address)
@@ -278,3 +101,58 @@ def get_cluster_ip_by_id(cluster_id):
     except requests.exceptions.RequestException as e:
         print(f"Error getting cluster data: {e}")
         return None
+
+
+def get_hca_data(cluster_ip, service_id):
+    request_address = f"http://{cluster_ip}:10180/api/v1/hca/{service_id}"
+    try:
+        response = requests.get(request_address)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Failed to get HCA data. Status code: {response.status_code}")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error getting HCA data: {e}")
+        return None
+
+
+def post_hca_monitor_data(cluster_ip, service_id, data):
+    request_address = f"http://{cluster_ip}:10180/api/v1/hca/{service_id}"
+    try:
+        response = requests.post(request_address, json=data)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Failed to post HCA monitor data. Status code: {response.status_code}")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error posting HCA monitor data: {e}")
+        return None
+
+
+def delete_hca_monitor_data(cluster_ip, service_id):
+    request_address = f"http://{cluster_ip}:10180/api/v1/hca/{service_id}"
+    try:
+        response = requests.delete(request_address)
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error deleting HCA monitor data: {e}")
+
+
+def put_hca_monitor_data(cluster_ip, service_id, data):
+    request_address = f"http://{cluster_ip}:10180/api/v1/hca/{service_id}"
+    try:
+        response = requests.put(request_address, json=data)
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error putting HCA monitor data: {e}")
+
+
+def post_manual_scale(cluster_ip, service_id, data):
+    request_address = f"http://{cluster_ip}:10180/api/v1/hca/manual"
+    try:
+        response = requests.post(request_address, json=data)
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error posting manual scale: {e}")

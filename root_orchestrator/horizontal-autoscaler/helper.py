@@ -1,72 +1,160 @@
-from monitor_container_state import ServiceScaler
 from flask import jsonify
-from other_requests import *
+import requests
+from pymongo import MongoClient
+from other_requests import (
+    get_service_cluster_id,
+    get_cluster_ip_by_id,
+    get_hca_data,
+    post_hca_monitor_data,
+    delete_hca_monitor_data,
+    put_hca_monitor_data,
+    post_manual_scale
+)
+
+client = MongoClient('mongodb://46.249.99.42:10007/')
+db = client['horizontal_autoscaler']
+service_cluster_mapping = db['service_cluster_mapping']
 
 
-def get_service_metrics(service_id):
-    return get_service_data(service_id)
+def get_service_cluster(service_id):
+    """
+    Get cluster ID for a service from MongoDB mapping or find it if not exists
+    """
+    mapping = service_cluster_mapping.find_one({'service_id': service_id})
 
-def scale_service_to_count(service_id, new_replica_count, current_replicas):
-    if new_replica_count > current_replicas:
-        # Scale UP
-        for i in range(current_replicas, new_replica_count):
-            create_instance_for_service(service_id)
+    if mapping:
+        return mapping['cluster_id']
 
-    elif new_replica_count < current_replicas:
-        # Scale DOWN
-        for i in range(current_replicas, new_replica_count, -1):
-            instance_list = get_instance_list(service_id)
-            delete_instance_from_service(service_id, instance_list[-1])
-
-def service_autoscaler(autoscaler_data, service_id, check_interval, cluster_id):
-    scaler = ServiceScaler(get_service_metrics, scale_service_to_count, scale_up_service_by_cluster)
-    scaler.start_monitoring_services(service_id, autoscaler_data, check_interval, cluster_id)
-
-def delete_service_autoscaler(service_id):
-    scaler = ServiceScaler(get_service_metrics, scale_service_to_count, scale_up_service_by_cluster)
-    scaler.stop_monitoring_service(service_id)
-
-def get_service_autoscaler_data(service_id):
-    scaler = ServiceScaler(get_service_metrics, scale_service_to_count, scale_up_service_by_cluster)
-    return scaler.get_scaling_config(service_id)
-
-def scale_service_up(service_id):
-    service_data = get_service_data(service_id)
-    if service_data is None:
-        return jsonify({"message": f"Service {service_id} not found"})
-    create_instance_for_service(service_id)
-
-def scale_service_down(service_id):
-    service_data = get_service_data(service_id)
-    if service_data is None:
-        return jsonify({"message": f"Service {service_id} not found"})
-
-    instance_list = get_instance_list(service_id)
-    if len(instance_list) == 1:
-        return jsonify({"message": f"Service {service_id} has only one instance, cannot scale down"})
-    else:
-        delete_instance_from_service(service_id, instance_list[-1])
-        return jsonify({"message": f"Service {service_id} scaled down"})
-
-def scale_up_service_by_cluster(service_id, cluster_id):
-    manager_deploy_request(cluster_id, service_id)
-
-def manual_scale(data):
-    scale_type = data["scale_type"]  # Either "up" or "down"
-    service_id = data["service_id"]
-    cluster_id = data["cluster_id"]
+    cluster_id = find_cluster(service_id)
     if cluster_id is None:
-        if scale_type == "up":
-            scale_service_up(service_id)
-        elif scale_type == "down":
-            return scale_service_down(service_id)
-        return jsonify({"message": f"Scaling {scale_type} triggered for service {service_id}"})
+        print(f"Error finding cluster for service {service_id}")
+        return None
 
-    else:
-        if scale_type == "up":
-            scale_up_service_by_cluster(service_id, cluster_id)
-        elif scale_type == "down":
-            return scale_service_down(service_id)
-        return jsonify(
-            {"message": f"Scaling by cluster_id {scale_type} triggered for service {service_id}"}
-        )
+    if cluster_id:
+        service_cluster_mapping.insert_one({
+            'service_id': service_id,
+            'cluster_id': cluster_id
+        })
+        return cluster_id
+
+    return None
+
+
+def find_cluster(service_id):
+    """
+    Find cluster ID for a service by calling system manager API
+    """
+    try:
+        response = get_service_cluster_id(service_id)
+        if response:
+            return response
+        else:
+            return None
+    except Exception as e:
+        print(f"Error finding cluster for service {service_id}: {e}")
+    return None
+
+
+def get_cluster_ip(cluster_id):
+    """
+    Get cluster IP for a cluster ID by calling system manager API
+    """
+    try:
+        # response = get_cluster_ip_by_id(cluster_id)
+        response = "127.0.0.1"
+        if response:
+            return response
+        else:
+            return None
+    except Exception as e:
+        print(f"Error getting cluster IP for cluster {cluster_id}: {e}")
+    return None
+
+
+def get_hca_data_from_cluster(service_id):
+    """
+    Get HCA data for a service by calling HCA API
+    """
+    try:
+        cluster_id = get_service_cluster(service_id)
+        if cluster_id:
+            cluster_ip = get_cluster_ip(cluster_id)
+            if cluster_ip:
+                return get_hca_data(cluster_ip, service_id)
+        else:
+            print(f"Error getting cluster IP for service {service_id}")
+            return jsonify({"error": f"Error getting cluster IP for service {service_id}"}), 500
+    except Exception as e:
+        print(f"Error getting HCA data for service {service_id}: {e}")
+        return jsonify({"error": f"Error getting HCA data for service {service_id}: {e}"}), 500
+
+
+def post_hca_monitor_data_to_cluster(service_id, data):
+    """
+    Post HCA data for a service by calling HCA API
+    """
+    try:
+        cluster_id = get_service_cluster(service_id)
+        if cluster_id:
+            cluster_ip = get_cluster_ip(cluster_id)
+            if cluster_ip:
+                return post_hca_monitor_data(cluster_ip, service_id, data)
+        else:
+            print(f"Error getting cluster IP for service {service_id}")
+            return jsonify({"error": f"Error getting cluster IP for service {service_id}"}), 500
+    except Exception as e:
+        print(f"Error posting HCA data for service {service_id}: {e}")
+        return jsonify({"error": f"Error posting HCA data for service {service_id}: {e}"}), 500
+
+def delete_hca_monitor_data_from_cluster(service_id):
+    """
+    Delete HCA data for a service by calling HCA API
+    """
+    try:
+        cluster_id = get_service_cluster(service_id)
+        if cluster_id:
+            cluster_ip = get_cluster_ip(cluster_id)
+            if cluster_ip:
+                return delete_hca_monitor_data(cluster_ip, service_id)
+        else:
+            print(f"Error getting cluster IP for service {service_id}")
+            return jsonify({"error": f"Error getting cluster IP for service {service_id}"}), 500
+    except Exception as e:
+        print(f"Error deleting HCA data for service {service_id}: {e}")
+        return jsonify({"error": f"Error deleting HCA data for service {service_id}: {e}"}), 500
+
+
+def put_hca_monitor_data_to_cluster(service_id, data):
+    """
+    Put HCA data for a service by calling HCA API
+    """
+    try:
+        cluster_id = get_service_cluster(service_id)
+        if cluster_id:
+            cluster_ip = get_cluster_ip(cluster_id)
+            if cluster_ip:
+                return put_hca_monitor_data(cluster_ip, service_id, data)
+        else:
+            print(f"Error getting cluster IP for service {service_id}")
+            return jsonify({"error": f"Error getting cluster IP for service {service_id}"}), 500
+    except Exception as e:
+        print(f"Error putting HCA data for service {service_id}: {e}")
+        return jsonify({"error": f"Error putting HCA data for service {service_id}: {e}"}), 500
+
+
+def post_manual_scale_to_cluster(service_id, data):
+    """
+    Post manual scale for a service by calling HCA API
+    """
+    try:
+        cluster_id = get_service_cluster(service_id)
+        if cluster_id:
+            cluster_ip = get_cluster_ip(cluster_id)
+            if cluster_ip:
+                return post_manual_scale(cluster_ip, service_id, data)
+        else:
+            print(f"Error getting cluster IP for service {service_id}")
+            return jsonify({"error": f"Error getting cluster IP for service {service_id}"}), 500
+    except Exception as e:
+        print(f"Error posting manual scale for service {service_id}: {e}")
+        return jsonify({"error": f"Error posting manual scale for service {service_id}: {e}"}), 500

@@ -9,16 +9,16 @@ from flask_smorest import Blueprint, Api
 from marshmallow import INCLUDE, Schema, fields
 from hca_logging import configure_logging
 from helper import (
-    service_autoscaler,
-    get_service_autoscaler_data,
-    manual_scale,
-    delete_service_autoscaler,
-    login_to_system_manager,
-    get_service_cluster_id,
+    get_hca_data_from_cluster,
+    post_hca_monitor_data_to_cluster,
+    delete_hca_monitor_data_from_cluster,
+    put_hca_monitor_data_to_cluster,
+    post_manual_scale_to_cluster
 )
+from other_requests import login_to_system_manager
+
 
 MY_PORT = os.environ.get("MY_PORT", "10080")
-CHECK_INTERVAL = os.environ.get("CHECK_INTERVAL", "3")
 
 my_logger = configure_logging()
 
@@ -75,7 +75,7 @@ def status():
 class HorizontalAutoscalerController(MethodView):
     def get(self, service_id):
         try:
-            result = get_service_autoscaler_data(service_id)
+            result = get_hca_data_from_cluster(service_id)
             return jsonify(result), 200
         except Exception as e:
             return jsonify({"error": str(e)}), 500
@@ -83,28 +83,15 @@ class HorizontalAutoscalerController(MethodView):
     @scalerblp.arguments(AutoscalerFilterSchema(unknown=INCLUDE), location="json")
     def post(self, data, **kwargs):
         service_id = kwargs.get("service_id")
-        
-        if get_service_autoscaler_data(service_id):
-            return jsonify({"error": f"Service already has an autoscaler with this data: {get_service_autoscaler_data(service_id)}"}), 400
         try:
-            if not all(
-                k in data
-                for k in ["cpu_threshold", "ram_threshold", "max_replicas", "min_replicas"]
-            ):
-                return jsonify({"error": "Missing required autoscaler parameters"}), 400
-
-            cluster_id = get_service_cluster_id(service_id)
-            if not cluster_id:
-                return jsonify({"error": "Cluster or service not found"}), 404
-
-            service_autoscaler(data, service_id, CHECK_INTERVAL, cluster_id)
+            post_hca_monitor_data_to_cluster(service_id, data)
             return jsonify({"message": f"Adding autoscaler for service {service_id}"}), 201
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
     def delete(self, service_id):
         try:
-            delete_service_autoscaler(service_id)
+            delete_hca_monitor_data_from_cluster(service_id)
             return jsonify({"message": f"Stopping autoscaler for service {service_id}"}), 200
         except Exception as e:
             return jsonify({"error": str(e)}), 500
@@ -112,36 +99,26 @@ class HorizontalAutoscalerController(MethodView):
     @scalerblp.arguments(AutoscalerFilterSchema(unknown=INCLUDE), location="json")
     def put(self, data, service_id):
         try:
-            if not all(
-                k in data
-                for k in ["cpu_threshold", "ram_threshold", "max_replicas", "min_replicas"]
-            ):
-                return jsonify({"error": "Missing required autoscaler parameters"}), 400
-
-            delete_service_autoscaler(service_id)
-
-            cluster_id = get_service_cluster_id(service_id)
-            if not cluster_id:
-                return jsonify({"error": "Cluster or service not found"}), 404
-
-            service_autoscaler(data, service_id, CHECK_INTERVAL, cluster_id)
-
+            put_hca_monitor_data_to_cluster(service_id, data)
             return jsonify({"message": f"Updated autoscaler for service {service_id}"}), 200
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+
 
 @scalerblp.route("/manual")
 class HorizontalScaleManualyByCluster(MethodView):
     @scalerblp.arguments(ManualScaleFilterSchema(unknown=INCLUDE), location="json")
     def post(self, data, **kwargs):
         try:
-            return manual_scale(data), 200
+            post_manual_scale_to_cluster(data["service_id"], data)
+            return jsonify({"message": f"Manual scale for service {data['service_id']}"}), 200
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
 api.register_blueprint(scalerblp)
+
 
 if __name__ == "__main__":
     login_to_system_manager()
