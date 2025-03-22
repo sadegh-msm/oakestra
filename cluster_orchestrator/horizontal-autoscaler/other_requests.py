@@ -2,6 +2,7 @@ import os
 import json
 import requests
 from pymongo import MongoClient
+from bson.objectid import ObjectId
 
 MONGO_CLUSTER_URI = os.environ.get("MONGO_CLUSTER_URI", "mongodb://46.249.99.42:10107/")
 DATABASE_CLUSTER_NAME = os.environ.get("DATABASE_CLUSTER_NAME", "jobs")
@@ -37,13 +38,20 @@ def login_to_system_manager():
 
 def manager_deploy_request(cluster_id, job_id):
     request_address = SYSTEM_MANAGER_ADDR + "/api/result/deploy"
-    print("calling: ", request_address)
     try:
-        requests.post(
+        response = requests.post(
             request_address,
             json={"cluster_id": cluster_id, "job_id": job_id},
             headers={"Authorization": f"Bearer {token}"}
         )
+        if response.status_code == 200:
+            print(f"Successfully deployed job {job_id} to cluster {cluster_id}")
+        elif response.status_code == 401:
+            login_to_system_manager()
+            manager_deploy_request(cluster_id, job_id)
+        else:
+            print(f"Failed to deploy job {job_id} to cluster {cluster_id}. Status code: {response.status_code}")
+
     except requests.exceptions.RequestException:
         print("Calling System Manager /api/result/deploy not successful.")
 
@@ -51,7 +59,15 @@ def manager_deploy_request(cluster_id, job_id):
 def delete_instance_from_service(service_id, instance_id):
     request_address = SYSTEM_MANAGER_ADDR + f"/api/service/{service_id}/instance/{instance_id}"
     try:
-        requests.delete(request_address, headers={"Authorization": f"Bearer {token}"})
+        response = requests.delete(request_address, headers={"Authorization": f"Bearer {token}"})
+        if response.status_code == 200:
+            print(f"Successfully deleted instance {instance_id} from service {service_id}")
+        elif response.status_code == 401:
+            login_to_system_manager()
+            delete_instance_from_service(service_id, instance_id)
+        else:
+            print(f"Failed to delete instance {instance_id} from service {service_id}. Status code: {response.status_code}")
+
     except requests.exceptions.RequestException:
         print("Calling System Manager /api/service/{service_id}/instance/{instance_id} not successful.")
 
@@ -63,8 +79,12 @@ def create_instance_for_service(service_id):
         response = requests.post(request_address, headers={"Authorization": f"Bearer {token}"})
         if response.status_code == 200:
             print(f"Successfully created new instance for service {service_id}")
+        elif response.status_code == 401:
+            login_to_system_manager()
+            create_instance_for_service(service_id)
         else:
             print(f"Failed to create instance for service {service_id}. Status code: {response.status_code}")
+
     except requests.exceptions.RequestException as e:
         print(f"Error creating instance for service {service_id}: {e}")
 
@@ -108,8 +128,12 @@ def get_instance_list(service_id):
             instance_list = service_data.get("instance_list", [])
 
             return [instance["instance_number"] for instance in instance_list]
+        elif response.status_code == 401:
+            login_to_system_manager()
+            get_instance_list(service_id)
         else:
             print(f"Failed to get instances for service {service_id}. Status code: {response.status_code}")
+
     except requests.exceptions.RequestException as e:
         print(f"Error getting instances for service {service_id}: {e}")
 
@@ -119,7 +143,7 @@ def is_cluster_full(cluster_id):
     db = client[DATABASE_ROOT_NAME]
     collection = db[COLLECTION_ROOT_NAME]
 
-    cluster_data = collection.find_one({"_id": cluster_id})
+    cluster_data = collection.find_one({"_id": ObjectId(cluster_id)})
     if not cluster_data:
         return False
 
@@ -133,11 +157,10 @@ def is_cluster_full(cluster_id):
     last_cpu = cpu_history[-1]["value"]
     last_memory = memory_history[-1]["value"]
 
-    return last_cpu >= (total_cpu_cores - 0.5) or last_memory >= 90
+    return last_cpu >= (total_cpu_cores - (total_cpu_cores * 0.20)) or last_memory >= 80
 
 def get_service_cluster_id(service_id):
     request_address = SYSTEM_MANAGER_ADDR + f"/api/service/{service_id}"
-    print("calling", request_address)
     try:
         response = requests.get(request_address, headers={"Authorization": f"Bearer {token}"})
         if response.status_code == 200:
@@ -159,9 +182,13 @@ def get_service_cluster_id(service_id):
                 return most_common_cluster
 
             return None
+        elif response.status_code == 401:
+            login_to_system_manager()
+            get_service_cluster_id(service_id)
         else:
             print(f"Failed to get service data. Status code: {response.status_code}")
             return None
+
     except requests.exceptions.RequestException as e:
         print(f"Error getting service data: {e}")
         return None
