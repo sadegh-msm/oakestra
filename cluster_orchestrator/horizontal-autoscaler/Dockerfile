@@ -1,5 +1,4 @@
-FROM python:3.10-slim-buster
-LABEL org.opencontainers.image.source https://github.com/oakestra/oakestra
+FROM python:3.12-slim-buster
 
 # Installing git to be able to install oakestra libraries. 
 RUN apt-get update && apt-get install -y --no-install-recommends git
@@ -15,19 +14,16 @@ ENV FLASK_ENV=development
 ENV FLASK_DEBUG=FALSE
 ENV C_FORCE_ROOT=TRUE
 
-ENV SYSTEM_MANAGER_URL=131.159.24.210
+ENV SYSTEM_MANAGER_URL=46.249.99.42
 ENV SYSTEM_MANAGER_PORT=10000
 
-ENV CLOUD_MONGO_URL=131.159.24.210
-ENV CLOUD_MONGO_PORT=10007
+ENV MY_PORT=10180
+EXPOSE 10180
 
-ENV RESOURCE_ABSTRACTOR_URL=131.159.24.210
-ENV RESOURCE_ABSTRACTOR_PORT=11011
+ENV CLUSTER_MANAGER_URL=46.249.99.42
+ENV CLUSTER_MANAGER_PORT=10105
+ENV MONGO_URI=mongodb://46.249.99.42:10107/
+ENV DATABASE_NAME=jobs
+ENV COLLECTION_NAME=jobs
 
-ENV REDIS_ADDR=redis://:cloudRedis@3.120.37.66:10009
-
-ENV MY_PORT=10009
-EXPOSE 10009
-
-CMD python cloud_scheduler.py
-
+CMD python horizontal_autoscaler.py
