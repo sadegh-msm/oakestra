@@ -3,6 +3,9 @@ from threading import Thread, Event, Lock
 from other_requests import is_cluster_full
 
 class ServiceScaler:
+    """
+    This class is responsible for monitoring the state of a service and scaling it up or down based on the metrics.
+    """
     _instance = None
     _lock = Lock()
 
@@ -28,7 +31,7 @@ class ServiceScaler:
         self.scale_service_to_count = scale_service_to_count
         self.scale_up_service_by_cluster = scale_up_service_by_cluster
         self.initial_replicas = {}  # Store initial replicas for each service
-        self.running_threads = {}  # Store active monitoring threads for each service 
+        self.running_threads = {}  # Store active monitoring threads for each service
         self.stop_events = {}  # Store stop event flags for each service
         self.scaling_configs = {}  # Store scaling configurations for each service
         self.last_scale_down_time = {}  # Store last scale down time for each service
@@ -42,6 +45,9 @@ class ServiceScaler:
         return self.scaling_configs.get(service_id, None)
 
     def monitor_single_service(self, service_id, cluster_id):
+        """
+        Monitor a single service in a background thread.
+        """
         print("Thread monitoring service ", service_id)
         try:
             scaling_config = self.get_scaling_config(service_id)

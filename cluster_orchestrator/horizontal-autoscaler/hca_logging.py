@@ -4,6 +4,9 @@ from logging.handlers import RotatingFileHandler
 
 
 def configure_logging():
+    """
+    logger for application.
+    """
     format_str = "%(asctime)s - - - %(name)s - %(levelname)s - %(message)s"
     formatter = logging.Formatter(format_str)
     my_filename = "hca.log"

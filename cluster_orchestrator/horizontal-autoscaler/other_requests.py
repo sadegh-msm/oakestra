@@ -23,6 +23,9 @@ token = None
 
 
 def login_to_system_manager():
+    """
+    Login to the System Manager.
+    """
     request_address = SYSTEM_MANAGER_ADDR + "/api/auth/login"
     try:
         response = requests.post(request_address, json={"username": "Admin", "password": "Admin"})
@@ -37,6 +40,9 @@ def login_to_system_manager():
 
 
 def manager_deploy_request(cluster_id, job_id):
+    """
+    Deploy a job to a cluster.
+    """
     request_address = SYSTEM_MANAGER_ADDR + "/api/result/deploy"
     try:
         response = requests.post(
@@ -57,6 +63,9 @@ def manager_deploy_request(cluster_id, job_id):
 
 
 def delete_instance_from_service(service_id, instance_id):
+    """
+    Delete an instance from a service.
+    """
     request_address = SYSTEM_MANAGER_ADDR + f"/api/service/{service_id}/instance/{instance_id}"
     try:
         response = requests.delete(request_address, headers={"Authorization": f"Bearer {token}"})
@@ -73,6 +82,9 @@ def delete_instance_from_service(service_id, instance_id):
 
 
 def create_instance_for_service(service_id):
+    """
+    Create a new instance for a service.
+    """
     print("Creating new instance for service...")
     request_address = SYSTEM_MANAGER_ADDR + f"/api/service/{service_id}/instance"
     try:
@@ -139,6 +151,9 @@ def get_instance_list(service_id):
 
 
 def is_cluster_full(cluster_id):
+    """
+    Check if a cluster is full.
+    """
     client = MongoClient(MONGO_ROOT_URI)
     db = client[DATABASE_ROOT_NAME]
     collection = db[COLLECTION_ROOT_NAME]
@@ -160,6 +175,9 @@ def is_cluster_full(cluster_id):
     return last_cpu >= (total_cpu_cores - (total_cpu_cores * 0.20)) or last_memory >= 80
 
 def get_service_cluster_id(service_id):
+    """
+    Get cluster id of a service, it will fetch all the instances and set a cluster that has most replicas in it.
+    """
     request_address = SYSTEM_MANAGER_ADDR + f"/api/service/{service_id}"
     try:
         response = requests.get(request_address, headers={"Authorization": f"Bearer {token}"})

@@ -1,6 +1,13 @@
 from monitor_container_state import ServiceScaler
 from flask import jsonify
-from other_requests import create_instance_for_service, get_service_data, get_instance_list, delete_instance_from_service, manager_deploy_request, get_service_cluster_id
+from other_requests import (
+    create_instance_for_service,
+    get_service_data,
+    get_instance_list,
+    delete_instance_from_service,
+    manager_deploy_request,
+    get_service_cluster_id,
+)
 
 
 def get_service_metrics(service_id):
@@ -8,6 +15,9 @@ def get_service_metrics(service_id):
 
 
 def scale_service_to_count(service_id, new_replica_count, current_replicas):
+    """
+    Scale a service to a new replica count.
+    """
     if new_replica_count > current_replicas:
         # Scale UP
         for i in range(current_replicas, new_replica_count):
@@ -21,21 +31,33 @@ def scale_service_to_count(service_id, new_replica_count, current_replicas):
 
 
 def service_autoscaler(autoscaler_data, service_id, check_interval, cluster_id):
+    """
+    Start the service autoscaler.
+    """
     scaler = ServiceScaler(get_service_metrics, scale_service_to_count, scale_up_service_by_cluster)
     scaler.start_monitoring_services(service_id, autoscaler_data, check_interval, cluster_id)
 
 
 def delete_service_autoscaler(service_id):
+    """
+    Delete the service autoscaler.
+    """
     scaler = ServiceScaler(get_service_metrics, scale_service_to_count, scale_up_service_by_cluster)
     scaler.stop_monitoring_service(service_id)
 
 
 def get_service_autoscaler_data(service_id):
+    """
+    Get the service autoscaler data.
+    """
     scaler = ServiceScaler(get_service_metrics, scale_service_to_count, scale_up_service_by_cluster)
     return scaler.get_scaling_config(service_id)
 
 
 def scale_service_up(service_id):
+    """
+    Scale a service up.
+    """
     service_data = get_service_data(service_id)
     if service_data is None:
         return jsonify({"message": f"Service {service_id} not found"})
@@ -43,6 +65,9 @@ def scale_service_up(service_id):
 
 
 def scale_service_down(service_id):
+    """
+    Scale a service down.
+    """
     service_data = get_service_data(service_id)
     if service_data is None:
         return jsonify({"message": f"Service {service_id} not found"})
@@ -56,10 +81,16 @@ def scale_service_down(service_id):
 
 
 def scale_up_service_by_cluster(service_id, cluster_id):
+    """
+    Scale a service up by cluster.
+    """
     manager_deploy_request(cluster_id, service_id)
 
 
 def manual_scale(data):
+    """
+    Manually scale a service.
+    """
     scale_type = data["scale_type"]  # Either "up" or "down"
     service_id = data["service_id"]
     cluster_id = data["cluster_id"]
