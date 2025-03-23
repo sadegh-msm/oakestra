@@ -50,12 +50,18 @@ app.register_blueprint(swaggerui_blueprint)
 
 
 class AutoscalerFilterSchema(Schema):
+    """
+    Schema for the autoscaler filter.
+    """
     cpu_threshold = fields.Int()
     ram_threshold = fields.Int()
     min_replicas = fields.Int()
     max_replicas = fields.Int()
 
 class ManualScaleFilterSchema(Schema):
+    """
+    Schema for the manual scale filter.
+    """
     service_id = fields.String()
     cluster_id = fields.String(missing=None)
     scale_type = fields.String()  # up and down
@@ -74,6 +80,9 @@ def status():
 @scalerblp.route("/<service_id>")
 class HorizontalAutoscalerController(MethodView):
     def get(self, service_id):
+        """
+        Get the autoscaler data for a given service.
+        """
         try:
             result = get_hca_data_from_cluster(service_id)
             return jsonify(result), 200
@@ -82,6 +91,9 @@ class HorizontalAutoscalerController(MethodView):
 
     @scalerblp.arguments(AutoscalerFilterSchema(unknown=INCLUDE), location="json")
     def post(self, data, **kwargs):
+        """
+        Add an autoscaler for a given service.
+        """
         service_id = kwargs.get("service_id")
         try:
             post_hca_monitor_data_to_cluster(service_id, data)
@@ -90,6 +102,9 @@ class HorizontalAutoscalerController(MethodView):
             return jsonify({"error": str(e)}), 500
 
     def delete(self, service_id):
+        """
+        Delete the autoscaler for a given service.
+        """
         try:
             delete_hca_monitor_data_from_cluster(service_id)
             return jsonify({"message": f"Stopping autoscaler for service {service_id}"}), 200
@@ -98,6 +113,9 @@ class HorizontalAutoscalerController(MethodView):
 
     @scalerblp.arguments(AutoscalerFilterSchema(unknown=INCLUDE), location="json")
     def put(self, data, service_id):
+        """
+        Update the autoscaler for a given service.
+        """
         try:
             put_hca_monitor_data_to_cluster(service_id, data)
             return jsonify({"message": f"Updated autoscaler for service {service_id}"}), 200
@@ -110,6 +128,9 @@ class HorizontalAutoscalerController(MethodView):
 class HorizontalScaleManualyByCluster(MethodView):
     @scalerblp.arguments(ManualScaleFilterSchema(unknown=INCLUDE), location="json")
     def post(self, data, **kwargs):
+        """
+        Scale a service manually by cluster.
+        """
         try:
             post_manual_scale_to_cluster(data["service_id"], data)
             return jsonify({"message": f"Manual scale for service {data['service_id']}"}), 200

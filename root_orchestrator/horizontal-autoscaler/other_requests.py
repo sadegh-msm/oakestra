@@ -26,6 +26,9 @@ token = None
 
 
 def login_to_system_manager():
+    """
+    Login to the System Manager.
+    """
     request_address = SYSTEM_MANAGER_ADDR + "/api/auth/login"
     try:
         response = requests.post(request_address, json={"username": "Admin", "password": "Admin"})
@@ -40,6 +43,9 @@ def login_to_system_manager():
 
 
 def deploy_request(cluster_id, job_id):
+    """
+    Deploy a job to a cluster.
+    """
     request_address = SYSTEM_MANAGER_ADDR + "/api/result/deploy"
     print("calling: ", request_address)
     try:
@@ -53,6 +59,9 @@ def deploy_request(cluster_id, job_id):
 
 
 def get_service_cluster_id(service_id):
+    """
+    Get cluster id of a service, it will fetch all the instances and set a cluster that has most replicas in it.
+    """
     request_address = SYSTEM_MANAGER_ADDR + f"/api/service/{service_id}"
     print("calling", request_address)
     try:
@@ -85,7 +94,10 @@ def get_service_cluster_id(service_id):
 
 
 def get_cluster_ip_by_id(cluster_id):
-    request_address = SYSTEM_MANAGER_ADDR + f"/api/clusters"
+    """
+    Get cluster ip by id.
+    """
+    request_address = SYSTEM_MANAGER_ADDR + "/api/clusters"
     print("calling", request_address)
     try:
         response = requests.get(request_address, headers={"Authorization": f"Bearer {token}"})
@@ -104,6 +116,9 @@ def get_cluster_ip_by_id(cluster_id):
 
 
 def get_hca_data(cluster_ip, service_id):
+    """
+    Get hca data from cluster hca.
+    """
     request_address = f"http://{cluster_ip}:10180/api/v1/hca/{service_id}"
     try:
         response = requests.get(request_address)
@@ -118,6 +133,9 @@ def get_hca_data(cluster_ip, service_id):
 
 
 def post_hca_monitor_data(cluster_ip, service_id, data):
+    """
+    Post hca data to cluster hca.
+    """
     request_address = f"http://{cluster_ip}:10180/api/v1/hca/{service_id}"
     try:
         response = requests.post(request_address, json=data)
@@ -132,6 +150,9 @@ def post_hca_monitor_data(cluster_ip, service_id, data):
 
 
 def delete_hca_monitor_data(cluster_ip, service_id):
+    """
+    Delete hca data from cluster hca.
+    """
     request_address = f"http://{cluster_ip}:10180/api/v1/hca/{service_id}"
     try:
         response = requests.delete(request_address)
@@ -141,6 +162,9 @@ def delete_hca_monitor_data(cluster_ip, service_id):
 
 
 def put_hca_monitor_data(cluster_ip, service_id, data):
+    """
+    Put hca data to cluster hca.
+    """
     request_address = f"http://{cluster_ip}:10180/api/v1/hca/{service_id}"
     try:
         response = requests.put(request_address, json=data)
@@ -150,6 +174,9 @@ def put_hca_monitor_data(cluster_ip, service_id, data):
 
 
 def post_manual_scale(cluster_ip, service_id, data):
+    """
+    Post manual scale data to cluster hca.
+    """
     request_address = f"http://{cluster_ip}:10180/api/v1/hca/manual"
     try:
         response = requests.post(request_address, json=data)
