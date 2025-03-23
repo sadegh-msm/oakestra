@@ -47,7 +47,6 @@ def deploy_request(cluster_id, job_id):
     Deploy a job to a cluster.
     """
     request_address = SYSTEM_MANAGER_ADDR + "/api/result/deploy"
-    print("calling: ", request_address)
     try:
         requests.post(
             request_address,
@@ -63,7 +62,6 @@ def get_service_cluster_id(service_id):
     Get cluster id of a service, it will fetch all the instances and set a cluster that has most replicas in it.
     """
     request_address = SYSTEM_MANAGER_ADDR + f"/api/service/{service_id}"
-    print("calling", request_address)
     try:
         response = requests.get(request_address, headers={"Authorization": f"Bearer {token}"})
         if response.status_code == 200:
@@ -98,7 +96,6 @@ def get_cluster_ip_by_id(cluster_id):
     Get cluster ip by id.
     """
     request_address = SYSTEM_MANAGER_ADDR + "/api/clusters"
-    print("calling", request_address)
     try:
         response = requests.get(request_address, headers={"Authorization": f"Bearer {token}"})
         if response.status_code == 200:
