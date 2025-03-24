@@ -170,7 +170,7 @@ def put_hca_monitor_data(cluster_ip, service_id, data):
         print(f"Error putting HCA monitor data: {e}")
 
 
-def post_manual_scale(cluster_ip, service_id, data):
+def post_manual_scale(cluster_ip, data):
     """
     Post manual scale data to cluster hca.
     """

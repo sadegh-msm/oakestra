@@ -85,7 +85,7 @@ class HorizontalAutoscalerController(MethodView):
         """
         try:
             result = get_hca_data_from_cluster(service_id)
-            return jsonify(result), 200
+            return result, 200
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
@@ -95,6 +95,8 @@ class HorizontalAutoscalerController(MethodView):
         Add an autoscaler for a given service.
         """
         service_id = kwargs.get("service_id")
+        if get_hca_data_from_cluster(service_id):
+            return jsonify({"error": "Autoscaler already exists"}), 400
         try:
             post_hca_monitor_data_to_cluster(service_id, data)
             return jsonify({"message": f"Adding autoscaler for service {service_id}"}), 201

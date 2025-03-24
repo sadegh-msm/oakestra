@@ -105,7 +105,10 @@ def post_manual_scale_to_cluster(service_id, data):
         if cluster_id:
             cluster_ip = get_cluster_ip(cluster_id)
             if cluster_ip:
-                return post_manual_scale(cluster_ip, service_id, data)
+                if data.get("cluster_id") is None:
+                    del data["cluster_id"]
+
+                return post_manual_scale(cluster_ip, data)
         else:
             print(f"Error getting cluster IP for service {service_id}")
             return jsonify({"error": f"Error getting cluster IP for service {service_id}"}), 500
