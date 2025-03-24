@@ -1,10 +1,15 @@
 from pymongo import MongoClient
 from other_requests import get_service_cluster_id
+import os
 
 
-client = MongoClient('mongodb://46.249.99.42:10007/')
-db = client['horizontal_autoscaler']
-service_cluster_mapping = db['service_cluster_mapping']
+MONGO_ROOT_URI = os.environ.get("MONGO_ROOT_URI", "mongodb://46.249.99.42:10007/")
+DATABASE_ROOT_HCA = os.environ.get("DATABASE_ROOT_HCA", "horizontal_autoscaler")
+COLLECTION_ROOT_HCA = os.environ.get("COLLECTION_ROOT_HCA", "service_cluster_mapping")
+
+client = MongoClient(MONGO_ROOT_URI)
+db = client[DATABASE_ROOT_HCA]
+service_cluster_mapping = db[COLLECTION_ROOT_HCA]
 
 
 def get_service_cluster(service_id):
