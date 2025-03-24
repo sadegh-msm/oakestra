@@ -134,8 +134,8 @@ class HorizontalScaleManualyByCluster(MethodView):
         Scale a service manually by cluster.
         """
         try:
-            post_manual_scale_to_cluster(data["service_id"], data)
-            return jsonify({"message": f"Manual scale for service {data['service_id']}"}), 200
+            response, status_code = post_manual_scale_to_cluster(data["service_id"], data)
+            return response, status_code
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500

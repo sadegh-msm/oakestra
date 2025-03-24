@@ -177,6 +177,6 @@ def post_manual_scale(cluster_ip, data):
     request_address = f"http://{cluster_ip}:10180/api/v1/hca/manual"
     try:
         response = requests.post(request_address, json=data)
-        return response.json()
+        return response.json(), response.status_code
     except requests.exceptions.RequestException as e:
         print(f"Error posting manual scale: {e}")
