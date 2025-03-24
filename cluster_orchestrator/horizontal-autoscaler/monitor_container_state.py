@@ -1,9 +1,11 @@
 import time
+import os
 import threading
 from threading import Thread, Event, Lock
 from other_requests import is_cluster_full
 from horizontal_autoscaler_db import delete_scaling_config, get_scaling_config, set_scaling_config
 
+COOLDOWN_SECONDS = os.environ.get("COOLDOWN_SECONDS", 30)
 
 class ServiceScaler:
     """
@@ -80,7 +82,7 @@ class ServiceScaler:
                 with self.data_lock:
                     last_time = self.last_scale_down_time.get(service_id, 0)
 
-                if (time.time() - last_time) > scaling_config.get("cooldown_seconds", 30):
+                if (time.time() - last_time) > COOLDOWN_SECONDS:
                     with self.data_lock:
                         self.last_scale_down_time[service_id] = time.time()
                     new_replica_count = max(scaling_config["min_replicas"], current_replicas - 1)

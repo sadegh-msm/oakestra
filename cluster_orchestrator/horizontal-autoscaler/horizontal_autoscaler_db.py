@@ -1,9 +1,15 @@
 from pymongo import MongoClient
 from threading import Lock
+import os
 
-client = MongoClient('mongodb://46.249.99.42:10107/')
-db = client['horizontal_autoscaler']
-scaling_data = db['scaling_data']
+
+MONGO_CLUSTER_URI = os.environ.get("MONGO_CLUSTER_URI", "mongodb://46.249.99.42:10107/")
+DATABASE_CLUSTER_HCA = os.environ.get("DATABASE_CLUSTER_HCA", "horizontal_autoscaler")
+COLLECTION_CLUSTER_HCA = os.environ.get("COLLECTION_CLUSTER_HCA", "scaling_data")
+
+client = MongoClient(MONGO_CLUSTER_URI)
+db = client[DATABASE_CLUSTER_HCA]
+scaling_data = db[COLLECTION_CLUSTER_HCA]
 
 
 mongo_lock = Lock()

@@ -17,7 +17,7 @@ from other_requests import login_to_system_manager, get_service_cluster_id
 
 
 MY_PORT = os.environ.get("MY_PORT", "10180")
-CHECK_INTERVAL = os.environ.get("CHECK_INTERVAL", "10")
+CHECK_INTERVAL = os.environ.get("CHECK_INTERVAL", "15")
 
 my_logger = configure_logging()
 
