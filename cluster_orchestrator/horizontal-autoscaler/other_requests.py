@@ -172,7 +172,8 @@ def is_cluster_full(cluster_id):
     last_cpu = cpu_history[-1]["value"]
     last_memory = memory_history[-1]["value"]
 
-    return last_cpu >= (total_cpu_cores - (total_cpu_cores * 0.20)) or last_memory >= 80
+    # return last_cpu >= (total_cpu_cores - (total_cpu_cores * 0.20)) or last_memory >= 80
+    return last_cpu >= (total_cpu_cores - (total_cpu_cores * 0.80)) or last_memory >= 80
 
 def get_service_cluster_id(service_id):
     """

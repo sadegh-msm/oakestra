@@ -6,12 +6,20 @@ from other_requests import (
     get_instance_list,
     delete_instance_from_service,
     manager_deploy_request,
-    get_service_cluster_id,
 )
+from horizontal_autoscaler_db import restore_scaling_configs, get_scaling_config
 
 
 def get_service_metrics(service_id):
     return get_service_data(service_id)
+
+
+def restore_scaling():
+    """
+    Restore the scaling configs from the database.
+    """
+    scaler = ServiceScaler(get_service_metrics, scale_service_to_count, scale_up_service_by_cluster)
+    restore_scaling_configs(scaler)
 
 
 def scale_service_to_count(service_id, new_replica_count, current_replicas):
@@ -50,8 +58,7 @@ def get_service_autoscaler_data(service_id):
     """
     Get the service autoscaler data.
     """
-    scaler = ServiceScaler(get_service_metrics, scale_service_to_count, scale_up_service_by_cluster)
-    return scaler.get_scaling_config(service_id)
+    return get_scaling_config(service_id)
 
 
 def scale_service_up(service_id):

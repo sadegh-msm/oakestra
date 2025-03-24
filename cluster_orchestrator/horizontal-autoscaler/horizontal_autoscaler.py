@@ -11,8 +11,10 @@ from helper import (
     get_service_autoscaler_data,
     manual_scale,
     delete_service_autoscaler,
+    restore_scaling,
 )
 from other_requests import login_to_system_manager, get_service_cluster_id
+
 
 MY_PORT = os.environ.get("MY_PORT", "10180")
 CHECK_INTERVAL = os.environ.get("CHECK_INTERVAL", "10")
@@ -80,12 +82,15 @@ class HorizontalAutoscalerController(MethodView):
     """
     Controller for the horizontal autoscaler.
     """
+
     def get(self, service_id):
         """
         Get the autoscaler data for a given service.
         """
         try:
             result = get_service_autoscaler_data(service_id)
+            if result:
+                result['_id'] = str(result['_id'])
             return jsonify(result), 200
         except Exception as e:
             return jsonify({"error": str(e)}), 500
@@ -150,6 +155,7 @@ class HorizontalAutoscalerController(MethodView):
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+
 @scalerblp.route("/manual")
 class HorizontalScaleManualyByCluster(MethodView):
     @scalerblp.arguments(ManualScaleFilterSchema(unknown=INCLUDE), location="json")
@@ -163,8 +169,10 @@ class HorizontalScaleManualyByCluster(MethodView):
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+
 api.register_blueprint(scalerblp)
 
 if __name__ == "__main__":
     login_to_system_manager()
+    restore_scaling()
     app.run(host="::", port=int(MY_PORT), debug=True, use_reloader=True, use_debugger=False)
