@@ -5,7 +5,8 @@ from other_requests import (
     post_hca_monitor_data,
     delete_hca_monitor_data,
     put_hca_monitor_data,
-    post_manual_scale
+    post_manual_scale,
+    get_cluster_ip_by_id
 )
 from horizontal_autoscaler_db import get_service_cluster
 
@@ -14,8 +15,8 @@ def get_cluster_ip(cluster_id):
     Get cluster IP for a cluster ID by calling system manager API
     """
     try:
-        # response = get_cluster_ip_by_id(cluster_id)
-        response = "127.0.0.1"
+        response = get_cluster_ip_by_id(cluster_id)
+        # response = "127.0.0.1"
         if response:
             return response
         else:
