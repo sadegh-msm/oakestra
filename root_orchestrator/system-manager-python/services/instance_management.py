@@ -36,7 +36,7 @@ def update_job_status_and_instances(
     instance_list: List[dict],
 ) -> None:
     logging.info(
-        f"Updating Job '{job_id}'s status to '{status}' " "and assigning a cluster for this job..."
+        f"Updating Job '{job_id}'s status to '{status}' and assigning a cluster for this job..."
     )
     updated_job = job_operations.update_job(
         job_id,
@@ -95,6 +95,7 @@ def request_scale_down_instance(microserviceid, username, which_one=-1):
 
     if microserviceid in application["microservices"]:
         instances = service.get("instance_list")
+
         if len(instances) > 0:
             for instance in instances:
                 if which_one == instance["instance_number"] or which_one == -1:

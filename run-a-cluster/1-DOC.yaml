@@ -42,7 +42,7 @@ services:
     environment:
       - CLOUD_MONGO_URL=mongo
       - CLOUD_MONGO_PORT=10007
-      - CLOUD_SCHEDULER_URL=cloud_scheduler
+      - CLOUD_SCHEDULER_URL=scheduler
       - CLOUD_SCHEDULER_PORT=10004
       - RESOURCE_ABSTRACTOR_URL=resource_abstractor
       - RESOURCE_ABSTRACTOR_PORT=11011
@@ -104,8 +104,11 @@ services:
       - SYSTEM_MANAGER_PORT=10000
       - CLOUD_MONGO_URL=mongo_net
       - CLOUD_MONGO_PORT=10008
+      - JWT_GENERATOR_URL=jwt_generator
+      - JWT_GENERATOR_PORT=10011
     depends_on:
       - mongo_rootnet
+      - jwt_generator
     logging: *default-logging
 
 
@@ -157,7 +160,7 @@ services:
 
   # Cloud Scheduler
   cloud_scheduler:
-    image: ghcr.io/oakestra/oakestra/cloud-scheduler:latest
+    image: ghcr.io/oakestra/oakestra/scheduler:latest
     pull_policy: always
     container_name: cloud_scheduler
     hostname: cloud_scheduler

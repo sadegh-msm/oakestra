@@ -1,7 +1,8 @@
 from datetime import datetime
 
-import db.mongodb_client as db
 from bson.objectid import ObjectId
+
+import db.mongodb_client as db
 from db.clusters_helper import get_freshness_threshold
 
 HISTORY_SLICE_SIZE = -100
@@ -49,13 +50,13 @@ def get_update_data(data):
     datetime_now = datetime.now()
 
     key_mapping = {
-        "cpu_percent": "aggregated_cpu_percent",
-        "cpu_cores": "total_cpu_cores",
-        "memory_percent": "aggregated_memory_percent",
-        "cumulative_memory_in_mb": "memory_in_mb",
-        "number_of_nodes": "active_nodes",
-        "gpu_cores": "total_gpu_cores",
-        "gpu_percent": "total_gpu_percent",
+        "cpu_percent": "cpu_percent",
+        "vcpus": "vcpus",
+        "memory_percent": "memory_percent",
+        "memory": "memory",
+        "active_nodes": "active_nodes",
+        "vgpus": "vgpus",
+        "gpu_percent": "gpu_percent",
         "virtualization": "virtualization",
         "more": "more",
         "worker_groups": "worker_groups",
