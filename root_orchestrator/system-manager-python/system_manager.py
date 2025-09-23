@@ -4,11 +4,11 @@ import threading
 from concurrent import futures
 from datetime import timedelta
 from pathlib import Path
-from secrets import token_hex
 
 import grpc
 from blueprints import blueprints
 from bson import json_util
+from ext_requests.jwt_generator_requests import get_public_key
 from ext_requests.mongodb_client import mongo_init
 from ext_requests.net_plugin_requests import net_register_cluster
 from ext_requests.user_db import create_admin
@@ -26,7 +26,7 @@ from proto.clusterRegistration_pb2_grpc import (
 )
 from resource_abstractor_client import cluster_operations
 from sm_logging import configure_logging
-from utils.network import sanitize
+from utils.network import get_ip_from_grpc_transport
 from werkzeug.utils import redirect, secure_filename
 
 my_logger = configure_logging()
@@ -41,7 +41,8 @@ app.config["API_TITLE"] = "Oakestra root api"
 app.config["API_VERSION"] = "v1"
 app.config["OPENAPI_URL_PREFIX"] = "/docs"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["JWT_SECRET_KEY"] = token_hex(32)
+app.config["JWT_ALGORITHM"] = "RS256"
+app.config["JWT_PUBLIC_KEY"] = get_public_key()
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(minutes=10)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=7)
 app.config["RESET_TOKEN_EXPIRES"] = timedelta(hours=3)  # for password reset
@@ -101,10 +102,10 @@ class ClusterRegistrationServicer(register_clusterServicer):
         app.logger.info(request)
         message = MessageToDict(request, preserving_proto_field_name=True)
         app.logger.info("Message: {}, request {}".format(message, request))
-        cluster_ip = context.peer().split(":")[1]
+        cluster_address = get_ip_from_grpc_transport(context.peer())
 
-        cluster_address = sanitize(cluster_ip)
         app.logger.info("Cluster address: {}".format(cluster_address))
+
         cluster_data = {
             "ip": cluster_address,
             "clusterinfo": message["cluster_info"][0],
@@ -112,7 +113,9 @@ class ClusterRegistrationServicer(register_clusterServicer):
             "cluster_location": message["cluster_location"],
             "cluster_name": message["cluster_name"],
         }
+
         app.logger.info("Cluster data: {}".format(cluster_data))
+
         cluster = cluster_operations.create_cluster(cluster_data)
         if cluster is None:
             app.logger.error("Creating cluster failed")

@@ -19,13 +19,19 @@ func init() {
 	configCmd.AddCommand(setVirtualizationCmd)
 	configCmd.AddCommand(defaultConfigCmd)
 	configCmd.AddCommand(setCni)
+	configCmd.AddCommand(visibility)
 	configCmd.AddCommand(setAuth)
 	setAuth.Flags().StringVarP(&certFile, "certFile", "c", "", "Path to certificate for TLS support")
 	setAuth.Flags().StringVarP(&keyFile, "keyFile", "k", "", "Path to key for TLS support")
 	setVirtualizationCmd.AddCommand(enableUnikernel)
+	setCni.AddCommand(explainNetManager)
 	setCni.AddCommand(enableNetwork)
 	setCni.AddCommand(disableNetwork)
+	setCni.AddCommand(enableManualNetwork)
+	visibility.AddCommand(publicIP)
+	visibility.AddCommand(privateIP)
 	addClusterCmd.Flags().IntVarP(&clusterPort, "clusterPort", "p", 10100, "Custom port of the cluster orchestrator")
+	addClusterCmd.Flags().BoolVarP(&clusterSSL, "clusterSSL", "s", false, "Perform cluster orchestrator handshake over HTTPS")
 	configCmd.AddCommand(setAddonCmd)
 	setAddonCmd.AddCommand(enableBuilder)
 	setAddonCmd.AddCommand(enableFlops)
@@ -118,14 +124,29 @@ var (
 
 	// --- NETWORKING
 	setCni = &cobra.Command{
-		Use:   "network [on/off]",
-		Short: "Enable/Disable networking support",
+		Use:   "network [auto/custom/off]",
+		Short: "Configure networking support",
+	}
+	explainNetManager = &cobra.Command{
+		Use:   "[auto/custom/off]",
+		Short: "Enable/disable automatic networking support",
 	}
 	enableNetwork = &cobra.Command{
-		Use:   "on",
-		Short: "Enable overlay network support (Requires NetManager daemon running)",
+		Use:   "auto",
+		Short: "Enable auto overlay network startup",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return setNetwork(config.DEFAULT_CNI)
+			return setNetwork(config.AUTO_OAK_NETWORK)
+		},
+	}
+	enableManualNetwork = &cobra.Command{
+		Use:   "manual [socket path]",
+		Short: "Manually pre-configured overlay network client. Default socket: /etc/netmanager/netmanager.sock (useful for debug and testing of custom overlay networks)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			socketPath := "custom:/etc/netmanager/netmanager.sock"
+			if len(args) == 1 {
+				socketPath = "custom:" + args[0]
+			}
+			return setNetwork(socketPath)
 		},
 	}
 	disableNetwork = &cobra.Command{
@@ -136,8 +157,30 @@ var (
 		},
 	}
 
+	// --- VISIBILITY
+	visibility = &cobra.Command{
+		Use:   "visibility [public/private]",
+		Short: "Use public or private IP",
+	}
+	publicIP = &cobra.Command{
+		Use:   "public",
+		Short: "Allow networking over the public IP address",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return setPublicIp(true)
+		},
+	}
+	privateIP = &cobra.Command{
+		Use:   "private",
+		Short: "Disallow networking over the public IP address",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return setPublicIp(false)
+		},
+	}
+
 	// --- MQTT AUTH
-	setAuth = &cobra.Command{
+	certFile string
+	keyFile  string
+	setAuth  = &cobra.Command{
 		Use:   "auth",
 		Short: "Set Mqtt Authentication",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -161,7 +204,38 @@ func configCluster(address string) error {
 
 	clusterConf.ClusterAddress = address
 	clusterConf.ClusterPort = clusterPort
+	clusterConf.ClusterSSL = clusterSSL
 
+	return configManager.Write(clusterConf)
+}
+
+func configAddress(address string) error {
+	configManager := config.GetConfFileManager()
+	clusterConf, err := configManager.Get()
+	if err != nil {
+		return err
+	}
+	clusterConf.ClusterAddress = address
+	return configManager.Write(clusterConf)
+}
+
+func configPort(port int) error {
+	configManager := config.GetConfFileManager()
+	clusterConf, err := configManager.Get()
+	if err != nil {
+		return err
+	}
+	clusterConf.ClusterPort = port
+	return configManager.Write(clusterConf)
+}
+
+func configSSL(encrypt bool) error {
+	configManager := config.GetConfFileManager()
+	clusterConf, err := configManager.Get()
+	if err != nil {
+		return err
+	}
+	clusterConf.ClusterSSL = encrypt
 	return configManager.Write(clusterConf)
 }
 
@@ -349,6 +423,17 @@ func setNetwork(cniName string) error {
 	}
 
 	clusterConf.OverlayNetwork = cniName
+
+	return configManager.Write(clusterConf)
+}
+
+func setPublicIp(public bool) error {
+	configManager := config.GetConfFileManager()
+	clusterConf, err := configManager.Get()
+	if err != nil {
+		return err
+	}
+	clusterConf.PublicIp = public
 
 	return configManager.Write(clusterConf)
 }

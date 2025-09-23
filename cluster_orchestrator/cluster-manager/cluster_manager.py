@@ -49,8 +49,7 @@ mongo_init(app)
 
 mqtt_init(app)
 
-BACKGROUND_JOB_INTERVAL = 5
-
+BACKGROUND_JOB_INTERVAL = 15
 
 # ................... REST API Endpoints ...............#
 # ......................................................#
@@ -148,7 +147,7 @@ def http_node_registration():
     app.logger.info("Incoming Request /api/node/register - to get all jobs")
     data = request.json  # get POST body
     data.get("token")  # registration_token
-    # TODO: check and generate tokens
+    # TODO(GB): check and generate tokens
     client_id = mongo_upsert_node({"ip": request.remote_addr, "node_info": data})
     response = {
         "id": str(client_id),
